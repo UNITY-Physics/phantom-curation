@@ -35,7 +35,7 @@ with open('utils/site_phantom_key.json') as f:
 # Get the Phantom QA project
 phantom_project = fw.lookup("unity/UNITY-QA")
 
-group_names = ["global_map","PRISMA"]
+group_names = ["global_map","prisma"]
 project_ids = []
 for group_name in group_names:    
     # Get the group
