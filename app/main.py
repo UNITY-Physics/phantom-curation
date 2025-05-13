@@ -54,7 +54,7 @@ def find_files():
 
     for subject in project.subjects.iter():
         subLabel = subject.label
-        if subLabel.startswith('137-00') or subLabel.startswith('13700') or subLabel.startswith('137-00'):
+        if subLabel.startswith('137-00') or subLabel.startswith('13700') or subLabel.startswith('137_00'):
             print("Looks like a phantom scan: ", subLabel)
             
             for session in subject.sessions.iter():
