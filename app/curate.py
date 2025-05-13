@@ -35,12 +35,21 @@ with open('utils/site_phantom_key.json') as f:
 # Get the Phantom QA project
 phantom_project = fw.lookup("unity/UNITY-QA")
 
-group_name = "global_map"
+group_names = ["global_map","PRISMA"]
+project_ids = []
+for group_name in group_names:    
+    # Get the group
+    group = fw.lookup(f"{group_name}")
+    group = group.reload()
+    
+    # Get the projects in the group
+    projects = group.projects()
+    project_ids.extend([project.id for project in projects])
 
-group = fw.lookup(f"{group_name}")
-group = group.reload()
-projects = group.projects()
-project_labels = [project.id for project in projects]
+# group = fw.lookup(f"{group_name}")
+# group = group.reload()
+# projects = group.projects()
+# project_ids = [project.id for project in projects]
 
 #the values are the phantom IDS
 #the keys are the site IDs
@@ -56,7 +65,7 @@ for key in keys_renamed:
     for phantom in phantoms:
         phantom = phantom.reload()
         
-        if phantom is not None and phantom.project in project_labels:
+        if phantom is not None and phantom.project in project_ids:
             project = fw.projects.find_first(f"_id={phantom.project}")
             print(phantom.label)
             print(project.label)
