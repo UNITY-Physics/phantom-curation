@@ -30,4 +30,4 @@ jobs:
       - name: Run the script
         run: |
           
-          python curate.py -apikey $FW_CLI_API_KEY
+          python app/curate.py -apikey $FW_CLI_API_KEY
