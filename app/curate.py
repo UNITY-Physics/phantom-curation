@@ -76,17 +76,17 @@ for key in keys_renamed:
                 print("Adding tag to session: ", session.label)
                 try:
                     session.add_tag('Phantom')
-                except:
-                    print("Error adding tag to session: ", session.label)
-                    continue
+                except Exception as e:
+                    print("Error adding tag to session: ", session.label, e)
+                    
 
                 try:
                     phantom_subject = phantom_project.add_subject(label=phantom.label)    
-                    print('Adding subject: ', phantom.label)                            
-                except:
+                    print('Adding subject: ', phantom.label), e                            
+                except Exception as e:
                     # If subject already exists, reload it
                     phantom_subject = phantom_project.subjects.find_one(f"label={phantom.label}")
-                    print('Subject already exists: ', phantom.label)
+                    print('Subject already exists: ', phantom.label, )
                     
                 # Move session to Phantom QA project
                 dest_sub = phantom_subject.reload()
@@ -94,8 +94,8 @@ for key in keys_renamed:
                     log.info("Moving session: ", session.label)
                     session.update({'subject': dest_sub.id})
                 except Exception as e:
-                    print("Error moving session; ",e)
-                    continue
+                    print("Error moving session: ",e)
+                    
 
 
 
