@@ -73,9 +73,10 @@ def main(fw):
             if phantom is not None and phantom.project in project_ids: #filtering prisma and global_map projects
                 project = fw.projects.find_first(f"_id={phantom.project}")
                 print("project: ", project.label, " phantom: ", phantom.label)
-
+                
                 try:
-                    phantom_subject = phantom_project.add_subject(label=phantom.label)    
+                    phantom_subject = phantom_project.add_subject(label=phantom.label)  
+                    dest_sub = phantom_subject.reload()  
                     print('Adding subject: ', phantom.label)                            
                 except Exception as e:
                     # If subject already exists, reload it
