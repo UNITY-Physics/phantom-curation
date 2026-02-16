@@ -1,0 +1,19 @@
+name: Keep Alive
+on:
+  schedule:
+    - cron: '0 0 1 */2 *'  # 1st day of every 2 months (Jan, Mar, May, etc.)
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update timestamp
+        run: |
+          date > .github/keepalive.txt
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .github/keepalive.txt
+          git commit -m "chore: keep repo active [skip ci]"
+          git push
