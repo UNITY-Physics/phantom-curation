@@ -8,6 +8,23 @@ from datetime import datetime
 log = logging.getLogger(__name__)
 
 def clean_session_analyses(session, fw):
+    
+    gears = ['gambas', 'recon-all-clinical']
+    for gear in gears:
+        query = f"session._id = {session.id} AND analysis.label CONTAINS {gear}"
+
+        gear_results = fw.search(
+            {"structured_query": query,
+            "return_type":"analysis"}
+        )
+        gear_matches = [r.analysis.reload() for r in gear_results]
+        for analysis in gear_matches:
+            print(f"Deleting analysis {analysis.label} from session {session.label}")
+            try:
+                fw.delete_analysis(analysis.id)
+            except Exception as e:
+                print(f"Error deleting analysis {analysis.label} from session {session.label}: {e}")
+
     #Clean recon-all-clinical and gambas analyses if any
     for analysis in session.analyses:
         if analysis.gear_info is not None and analysis.gear_info.name in ['recon-all-clinical', 'gambas']:
