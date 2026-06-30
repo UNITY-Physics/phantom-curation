@@ -3,8 +3,59 @@ import flywheel
 import logging
 import os
 import json
+from datetime import datetime
 
 log = logging.getLogger(__name__)
+
+def clean_session_analyses(session, fw):
+    #Clean recon-all-clinical and gambas analyses if any
+    for analysis in session.analyses:
+        if analysis.gear_info is not None and analysis.gear_info.name in ['recon-all-clinical', 'gambas']:
+            print(f"Deleting analysis {analysis.label} of type {analysis.gear_info.name} from session {session.label}")
+            fw.delete_analysis(analysis.id)
+        else:
+            print(f"Skipping analysis {analysis.label} of type {analysis.gear_info.name if analysis.gear_info else 'Unknown'}")
+
+def is_ghost_analysis(analysis):
+    """
+    Check if an analysis is a ghost analysis by checking gear name or analysis label.
+    """
+    # Check gear name - must be exactly 'ghost' gear
+    if analysis.label:
+        label = analysis.label.lower()
+        # Look for patterns like 'gambas/0.4.14' or 'gambas/0.4.17'
+        if ("ghost/" in label and analysis.files) or (analysis.gear_info is not None and analysis.gear_info.name.lower() == "ghost" and analysis.job.get('state') == "complete"):
+            return True
+        
+    return False
+
+def submit_ghost_job(session, fw):
+    gear =  fw.lookup('gears/ghost')
+    analysis_tag = 'ghost'
+
+    job_list = list()
+    ghost_analyses = [analysis for analysis in session.analyses if is_ghost_analysis(analysis)]
+    if ghost_analyses:
+        print(f"Skipping session {session.label} - ghost analysis already exists.")
+        return
+    try:
+        # The destination for this analysis will be on the session
+        dest = session
+        time_fmt = '%d-%m-%Y_%H-%M-%S'
+        analysis_label = f'{analysis_tag}_{datetime.now().strftime(time_fmt)}'
+        job_id = gear.run(
+            analysis_label=analysis_label,
+            
+            destination=dest,
+            tags=["analysis", "ghost","gpu"],
+            config={
+            
+                }
+        )
+        job_list.append(job_id)
+        print("Submitting Job: Check Jobs Log", dest.label)
+    except Exception as e:
+        print(f"WARNING: Job cannot be sent for {dest.label}. Error: {e}")
 
 def find_files():
 
@@ -74,6 +125,9 @@ def find_files():
                 try:
                     print("Moving session: ", session.label)
                     session.update({'subject': dest_sub.id})
+                    #Clear session analyses if any and schedule ghost analysis with helper functions
+                    submit_ghost_job(session, fw)
+                    clean_session_analyses(session, fw)
                 except:
                     print("Error moving session")
                     continue
