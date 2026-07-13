@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 def clean_session_analyses(session, fw):
     
-    gears = ['gambas', 'recon-all-clinical','circumference','mrr']
+    gears = ['gambas', 'recon-all-clinical','circumference']
     for gear in gears:
         query = f"session._id = {session.id} AND analysis.label CONTAINS {gear}"
 
