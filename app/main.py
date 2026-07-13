@@ -143,8 +143,8 @@ def find_files():
                     print("Moving session: ", session.label)
                     session.update({'subject': dest_sub.id})
                     #Clear session analyses if any and schedule ghost analysis with helper functions
-                    #submit_ghost_job(session, fw)
                     clean_session_analyses(session, fw)
+                    submit_ghost_job(session, fw)
                 except:
                     print("Error moving session")
                     continue
