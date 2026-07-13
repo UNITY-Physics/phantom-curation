@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 def clean_session_analyses(session, fw):
     
-    gears = ['gambas', 'recon-all-clinical']
+    gears = ['gambas', 'recon-all-clinical','circumference','mrr']
     for gear in gears:
         query = f"session._id = {session.id} AND analysis.label CONTAINS {gear}"
 
@@ -27,7 +27,7 @@ def clean_session_analyses(session, fw):
 
     #Clean recon-all-clinical and gambas analyses if any
     for analysis in session.analyses:
-        if analysis.gear_info is not None and analysis.gear_info.name in ['recon-all-clinical', 'gambas']:
+        if analysis.gear_info is not None and analysis.gear_info.name in gears:
             print(f"Deleting analysis {analysis.label} of type {analysis.gear_info.name} from session {session.label}")
             fw.delete_analysis(analysis.id)
         else:
