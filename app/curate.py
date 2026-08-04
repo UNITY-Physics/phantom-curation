@@ -2,8 +2,7 @@ import json
 import os
 import re
 
-import numpy as np
-import pandas as pd
+
 from tqdm import tqdm
 from datetime import datetime
 from glob import glob
@@ -11,27 +10,16 @@ import zipfile
 import argparse
 import flywheel
 import logging
+from utils import acquisitions_have_files, has_complete_ghost_analysis_with_files, clean_session_analyses
+
 
 log = logging.getLogger(__name__)
 
-
-def acquisitions_have_files(session):
-    complete = True
-    for acq in session.acquisitions():
-        acq = acq.reload()
-        print(acq.label, " has ", len(acq.files), " files.")
-        complete = complete and (len(acq.files) > 0)
-        
-    return complete
 
 
 
 def main(fw):
 
-    # for fw_project in fw.projects():
-    #     fw_project = fw_project.reload()
-    #     print(f"Project: {fw_project.label}")
-        
     #Given a list of phantom IDs, get the subject, and move it to UNITY-QA
     #read the site_phantom_key.json file from utils
     with open('utils/site_phantom_key.json') as f:
@@ -39,6 +27,7 @@ def main(fw):
 
     # Get the Phantom QA project
     phantom_project = fw.lookup("unity/UNITY-QA")
+    gear_ghost =  fw.lookup('gears/ghost')
 
     group_names = ["global_map","prisma"]
     project_ids = []
@@ -51,11 +40,6 @@ def main(fw):
         projects = group.projects()
         project_ids.extend([project.id for project in projects])
 
-    # group = fw.lookup(f"{group_name}")
-    # group = group.reload()
-    # projects = group.projects()
-    # project_ids = [project.id for project in projects]
-
     #the values are the phantom IDS
     #the keys are the site IDs
     keys = list(site_phantom_key.values())
@@ -64,8 +48,6 @@ def main(fw):
     keys_renamed.extend(["137_"+key for key in keys])
 
     for key in keys_renamed:
-        #phantom = fw.subjects.find_first(f"label={key}")
-
         phantoms = fw.subjects.find(f"label={key}") #look for the Phantom subject in all global_map and prisma projects
         for phantom in phantoms:
             phantom = phantom.reload()
@@ -102,20 +84,40 @@ def main(fw):
                             print(f"✅ Session '{session.label}' exists and is complete — skipping.")
                             continue
                         else:
-                            print(f"🗑️ Session '{session.label}' is incomplete — deleting from phantom_QA.")
+                            print(f"🗑️ Session '{session.label}' is incomplete — deleting from UNITY_QA.")
                             try:
                                 # Delete the existing session if it exists and is incomplete
                                 fw.delete_session(existing_session.id)
                                 # existing_session.delete()
-                                print(f"✔️ Deleted session '{session.label}' from phantom_QA.")
+                                print(f"✔️ Deleted session '{session.label}' from UNITY_QA.")
                             except Exception as e:
                                 print(f"❌ Failed to delete session '{session.label}': {e}")
                                 continue  # Skip reassign if we can't delete
 
-                    # Reassign session to phantom_QA subject
+                    # Reassign session to UNITY_QA subject
                     try:
-                        print(f"🔄 Moving session '{session.label}' to phantom_QA...")
+                        print(f"🔄 Moving session '{session.label}' to UNITY_QA...")
+                        clean_session_analyses(session, fw)
                         session.update({'subject': dest_sub.id})
+                        session = session.reload()
+                        #Submit ghost job if the session has acquisitions with files and no complete ghost analysis
+                        if acquisitions_have_files(session) and not has_complete_ghost_analysis_with_files(session):
+                            print(f"📤 Submitting ghost job for session '{session.label}'...")
+                            dest = session
+                            time_fmt = "%Y%m%d_%H%M%S"
+                            # Clear session analyses if any and schedule ghost analysis with helper functions
+                            analysis_label = f'ghost_{datetime.now().strftime(time_fmt)}'
+                            print("This session does not have a complete ghost job",  {session.label})
+                            job_id = gear_ghost.run(
+                                analysis_label=analysis_label,
+                                destination=dest,
+                                tags=["qa", "ghost", "gpu","auto"],
+                                config={}
+                            )
+                            
+                
+                        else:
+                            print(f"⚠️ Session '{session.label}' does not meet criteria for ghost job submission.")
                     except Exception as e:
                         print(f"❌ Failed to reassign session '{session.label}': {e}")
 
