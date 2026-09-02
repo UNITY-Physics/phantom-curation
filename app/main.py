@@ -9,27 +9,28 @@ log = logging.getLogger(__name__)
 
 def clean_session_analyses(session, fw):
     
-    gears = ['gambas', 'recon-all-clinical','circumference']
+    gears = ['gambas', 'recon-all-clinical','circumference',"synthseg"]
     for gear in gears:
-        query = f"session._id = {session.id} AND analysis.label CONTAINS {gear}"
 
-        gear_results = fw.search(
-            {"structured_query": query,
-            "return_type":"analysis"}
-        )
-        gear_matches = [r.analysis.reload() for r in gear_results]
-        for analysis in gear_matches:
-            print(f"Deleting analysis {analysis.label} from session {session.label}")
+        gear_matches = fw.analyses.find(f"parents.session={session.id},gear_info.name={gear}")
+        for asys in gear_matches:
+            
             try:
-                fw.delete_analysis(analysis.id)
+                r = asys.reload()
+                print(f"Deleting analysis {r.label} from session {session.label}")
+                fw.delete_analysis(r.id)
             except Exception as e:
-                print(f"Error deleting analysis {analysis.label} from session {session.label}: {e}")
+                r = asys.reload()
+                print(f"Error deleting analysis {r.label} from session {session.label}: {e}")
 
     #Clean recon-all-clinical and gambas analyses if any
     for analysis in session.analyses:
         if analysis.gear_info is not None and analysis.gear_info.name in gears:
             print(f"Deleting analysis {analysis.label} of type {analysis.gear_info.name} from session {session.label}")
-            fw.delete_analysis(analysis.id)
+            try:
+                fw.delete_analysis(analysis.id)
+            except Exception as e:
+                print(f"Error deleting analysis {analysis.label} of type {analysis.gear_info.name} from session {session.label}: {e}")
         else:
             print(f"Skipping analysis {analysis.label} of type {analysis.gear_info.name if analysis.gear_info else 'Unknown'}")
 
@@ -82,7 +83,7 @@ def find_files():
         input_image: FISP acquistion dicom.
     
     Returns:
-    output_dir: Phantom QA project.
+    output_dir: phantom QA project.
 
 
     """
@@ -97,7 +98,7 @@ def find_files():
     api_key = (config['inputs']['api-key']['key'])
     fw = flywheel.Client(api_key=api_key)
 
-    # Get the Phantom QA project
+    # Get the phantom QA project
     phantom = fw.lookup("dev/Phantom_QA")
 
     # Get the parent id from inputs in config file
@@ -130,14 +131,14 @@ def find_files():
                 # Add a tag to a session
                 session.add_tag('Phantom')
 
-                # Create new subject in Phantom QA project
+                # Create new subject in phantom QA project
                 try:
                     phantom_subject = phantom.add_subject(label=subject.label)                                
                 except:
                     # If subject already exists, reload it
                     phantom_subject = phantom.subjects.find_one("label=" + subject.label)
                     
-                # Move session to Phantom QA project
+                # Move session to phantom QA project
                 dest_sub = phantom_subject.reload()
                 try:
                     print("Moving session: ", session.label)

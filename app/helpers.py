@@ -9,7 +9,7 @@ def has_complete_ghost_analysis_with_files(session):
         if analysis.gear_info and analysis.gear_info.name == "ghost":
             if analysis.job and (analysis.job.get("state") == "pending" or analysis.job.get("state") == "running" or (analysis.job.get("state") == "complete" and analysis.files) ):
                 has_successful_analysis =  True
-                print(f"Session {session.label} has a ghost analysis: {analysis.job.get("state")} - no need to rerun")
+                print(f'Session {session.label} has a ghost analysis: {analysis.job.get("state")} - no need to rerun')
             elif (analysis.job and analysis.job.get("state") == "failed"):
                 print(f"Session {session.label} has a failed ghost analysis: {analysis.label} - no need to rerun")
                 has_successful_analysis =  True
