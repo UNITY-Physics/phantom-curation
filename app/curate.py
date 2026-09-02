@@ -10,7 +10,7 @@ import zipfile
 import argparse
 import flywheel
 import logging
-from utils import acquisitions_have_files, has_complete_ghost_analysis_with_files, clean_session_analyses
+from helpers import acquisitions_have_files, has_complete_ghost_analysis_with_files, clean_session_analyses
 
 
 log = logging.getLogger(__name__)
