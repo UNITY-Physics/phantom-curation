@@ -29,7 +29,7 @@ def main(fw):
     phantom_project = fw.lookup("unity/UNITY-QA")
     gear_ghost =  fw.lookup('gears/ghost')
 
-    group_names = ["global_map","prisma"]
+    group_names = ["global_map","prisma","rise"]
     project_ids = []
     for group_name in group_names:    
         # Get the group
