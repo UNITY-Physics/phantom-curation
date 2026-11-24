@@ -31,7 +31,7 @@ def acquisitions_have_files(session):
 
 def clean_session_analyses(session, fw):
     
-    gears = ["ghost","ghoststats","mrr"]
+    gears = ["gambas"]
     analyses = fw.analyses.find(f"parents.session={session.id}")
     for asys in analyses:
         try:
